@@ -2,8 +2,10 @@ name: Sync Notion to Blog
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Every day at midnight (UTC)
-  workflow_dispatch: # Can be triggered manually
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+  push:
+    branches: [ main ]
 
 permissions:
   contents: write
@@ -36,7 +38,6 @@ jobs:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
           NOTION_BLOG_DB_ID: ${{ vars.NOTION_BLOG_DB_ID }}
           NOTION_PROJECTS_DB_ID: ${{ vars.NOTION_PROJECTS_DB_ID }}
-          # Configure paths so sync results go into the checked-out blog-repo folder
           BLOG_DIR: ./blog-repo/src/content/blog
           PROJECTS_DIR: ./blog-repo/src/content/project
           IMAGE_DIR: ./blog-repo/src/assets/notion
@@ -51,9 +52,6 @@ jobs:
           git add .
           CHANGES=$(git status --porcelain)
           if [ -n "$CHANGES" ]; then
-            echo "Changes detected, committing and pushing to blog repository"
             git commit -m "chore(content): sync latest posts from Notion"
-            git push
-          else
-            echo "No changes to commit"
+            git push origin main
           fi
