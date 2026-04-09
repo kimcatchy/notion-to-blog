@@ -98,8 +98,35 @@ export class PageConverter {
     } catch {}
   }
 
+  private hasHeading1(blocks: any[]): boolean {
+    for (const block of blocks) {
+      if (block.type === 'heading_1') return true;
+      if (block.children?.length > 0 && this.hasHeading1(block.children)) return true;
+    }
+    return false;
+  }
+
+  private demoteHeadings(blocks: any[]) {
+    for (const block of blocks) {
+      if (['heading_1', 'heading_2', 'heading_3'].includes(block.type)) {
+        if (block.parent?.startsWith('#')) {
+          block.parent = '#' + block.parent;
+        }
+      }
+      if (block.children?.length > 0) {
+        this.demoteHeadings(block.children);
+      }
+    }
+  }
+
   async convert(pageId: string, properties: Record<string, PropertyValue>): Promise<string> {
     const mdblocks = await this.n2m.pageToMarkdown(pageId);
+    
+    // Demote headings if H1 is present to ensure H2 is the top-level heading in the blog
+    if (this.hasHeading1(mdblocks)) {
+      this.demoteHeadings(mdblocks);
+    }
+
     const mdString = this.n2m.toMarkdownString(mdblocks);
 
     let frontmatter = `---\n`;
